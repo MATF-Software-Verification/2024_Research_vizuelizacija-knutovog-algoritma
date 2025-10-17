@@ -1,0 +1,125 @@
+<section class="p-4 md:p-8">
+  <header class="mb-6">
+    <h2 class="text-2xl font-semibold">Примери</h2>
+    <p class="text-gray-600">Изабери пример, покрени визуализацију и симулацију.</p>
+  </header>
+
+  <!-- Examples list -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <button
+      *ngFor="let ex of examples"
+      type="button"
+      class="text-left rounded-xl border p-4 hover:bg-gray-50"
+      [class.border-gray-900]="ex.id === selectedId"
+      (click)="pick(ex.id)">
+      <div class="font-medium">{{ ex.title }}</div>
+      <div class="text-sm text-gray-600">{{ ex.description }}</div>
+    </button>
+  </div>
+
+  <!-- Stepper & layout controls -->
+  <div class="flex flex-wrap items-center gap-3 mb-3">
+    <div class="flex items-center gap-2">
+      <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" (click)="resetSteps()">Ресетуј</button>
+      <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" [disabled]="step === 0" (click)="prevStep()">Назад</button>
+      <button *ngIf="step === 0" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:opacity-90" (click)="startStep()">Покрени визуализацију</button>
+      <button *ngIf="step > 0 && step < 5" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:opacity-90" (click)="nextStep()">Даље</button>
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto">
+      <label class="text-sm text-gray-600">Распоред:</label>
+      <select class="px-3 py-1.5 rounded-lg border border-gray-300"
+              [value]="layoutName"
+              (change)="onLayoutChange($event)">
+        <option value="dagre">Dagre</option>
+        <option value="elk">ELK</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Step info -->
+  <div class="mb-3 text-sm text-gray-700">
+    <ng-container [ngSwitch]="step">
+      <div *ngSwitchCase="0">Старт – прикажи граф. Кликни „Покрени визуализацију“.</div>
+      <div *ngSwitchCase="1">Тежине – на свакој грани видиш ознаку w=тежина.</div>
+      <div *ngSwitchCase="2">MST – истакнуте су гране које чине максимално разапињуће стабло (по тежинама &gt; 0).</div>
+      <div *ngSwitchCase="3">Инструментација – означене су испрекиданом линијом гране које треба мерити.</div>
+      <div *ngSwitchCase="4">Мерења – изабери број покретања и покрени симулацију. Током симулације видиш бројаче на инструментизованим гранама.</div>
+      <div *ngSwitchCase="5">Реконструкција – приказ броја пролазака по свим гранама.</div>
+    </ng-container>
+  </div>
+
+  <!-- Simulation controls (Korak 4+) -->
+  <div *ngIf="step === 4" class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-gray-600 w-32">Број покретања</label>
+      <input type="number" min="1" class="px-3 py-1.5 rounded-lg border border-gray-300 w-full"
+             [value]="runs" (input)="onRunsChange($event)">
+    </div>
+    <div class="flex items-center gap-2">
+      <label class="text-sm text-gray-600 w-32">Брзина анимације</label>
+      <input type="range" min="0.25" max="3" step="0.25" class="w-full"
+             [value]="speed" (input)="onSpeedChange($event)">
+    </div>
+  </div>
+
+  <div *ngIf="step === 4" class="flex items-center gap-2 mb-3">
+    <button class="px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:opacity-90" [disabled]="isRunning && !isPaused" (click)="simStart()">Покрени</button>
+    <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" [disabled]="!isRunning || isPaused" (click)="simPause()">Пауза</button>
+    <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" [disabled]="!isRunning || !isPaused" (click)="simResume()">Настави</button>
+    <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" [disabled]="!isRunning" (click)="simStop()">Заустави</button>
+    <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100" (click)="simReset()">Ресетуј бројач</button>
+
+    <div class="ml-auto text-sm text-gray-600">
+      Статус: <span *ngIf="isRunning && !isPaused">Ради</span><span *ngIf="isRunning && isPaused">Пауза</span><span *ngIf="!isRunning">Стојеће</span> — Покретање: {{ currentRun }}/{{ runs }}
+    </div>
+  </div>
+
+  <!-- Reconstruction controls (Korak 5) -->
+  <div *ngIf="step >= 5" class="mb-4 border rounded-xl p-4 bg-white">
+    <div class="flex flex-wrap items-center gap-2">
+      <button class="px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:opacity-90"
+              (click)="reconComputeNext()"
+              [disabled]="pendingTreeEdges.length === 0">
+        Израчунај следећу грану
+      </button>
+
+      <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100"
+              (click)="reconPrev()" [disabled]="reconIdx <= 0">
+        Претходно
+      </button>
+      <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100"
+              (click)="reconNext()" [disabled]="reconIdx + 1 >= reconSteps.length">
+        Следеће
+      </button>
+      <button class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-100"
+              (click)="reconReset()" [disabled]="reconSteps.length === 0">
+        Ресетуј
+      </button>
+
+      <div class="ml-auto text-sm text-gray-600">
+        Преостало за решавање: {{ pendingTreeEdges.length }} грана
+      </div>
+    </div>
+
+    <div class="mt-3 text-sm text-gray-800 whitespace-pre-line">
+      <ng-container *ngIf="reconSteps.length > 0 && reconIdx >= 0; else noReconYet">
+        {{ reconSteps[reconIdx].text }}
+        <div class="mt-2 text-gray-600">
+          Решена грана: <span class="font-medium">{{ reconSteps[reconIdx].solvedEdgeId }}</span>,
+          вредност: <span class="font-medium">{{ reconSteps[reconIdx].value }}</span>
+        </div>
+      </ng-container>
+      <ng-template #noReconYet>
+        Кликни „Израчунај следећу грану“ да бисмо применили баланс у првом доступном чвору и добили вредност tree гране.
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Graph viewer -->
+  <app-graph-canvas
+    [data]="selectedData()"
+    [layoutName]="layoutName"
+    [overlay]="overlay()">
+  </app-graph-canvas>
+</section>

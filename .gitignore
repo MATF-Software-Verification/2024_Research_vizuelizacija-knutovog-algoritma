@@ -1,0 +1,58 @@
+# --- Node / Angular ---
+node_modules/
+dist/
+out-tsc/
+tmp/
+.angular/
+.angular/cache/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Coverage & test artifacts
+coverage/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+playwright-report/
+test-results/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files (keep an example committed)
+.env
+.env.*
+!.env.example
+
+# Package manager caches
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Caches
+.cache/
+.sass-cache/
+.parcel-cache/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Optional GitHub Pages alt deploy folder (uncomment if you use /docs)
+# docs/
